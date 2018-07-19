@@ -145,7 +145,40 @@ class DBAPIConnetor(LoggingMixin):
         return self.__class__(host=self.host, port=self.port, database=self.database,
                               user = self.user, password=self.password, *self.args, **self.kwargs)
 
-    def
+    def  get_columns(self,table, database = None, exclude = None):
+        #check database table
+        if not database:
+            database = self.database
+        if not self.has_table(table,database):
+            raise ValueError(f'Table {table} not exists in {database}')
+        with self.cursor() as cursor:
+            cursor.execute(f'SELECT * FROM {database}.{table} LIMIT 0')
+            cursor.fetchall()
+            cols = self.get_cloumns_from_cursor(cursor)
+        if exclude:
+            cols = [x for x in cols  if x not in exclude]
+        return cols
+
+    @staticmethod
+    def get_cloumns_from_cursor(cursor):
+        cols = []
+        # """Provides a 7-item tuple compatible with the Python PEP249 DB Spec."""
+        # return (
+        #     self.name,
+        #     self.type_code,
+        #     None,  # TODO: display_length; should this be self.length?
+        #     self.get_column_length(),  # 'internal_size'
+        #     self.get_column_length(),  # 'precision'  # TODO: why!?!?
+        #     self.scale,
+        #     self.flags % 2 == 0)
+        for item in cursor.description:
+            name = item[0]
+            if '.' in name:
+                #table.column
+                cols.append(name.split('.')[1])
+            else:
+                cols.append(name)
+        return cols
 
 
 
