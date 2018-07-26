@@ -1,4 +1,4 @@
-from utils import LoggingMixin
+from utils import LoggingMixin, trim_prefix, trim_suffix
 import contextlib
 import logging
 import sqlalchemy
@@ -138,8 +138,13 @@ class DBAPIConnetor(LoggingMixin):
     def get_pandas_df(self,query, parameters=None, **kwargs):
         return pd.read_sql_query(sql = query, con = self.create_engine(), params=parameters, **kwargs)
 
-    def has_table(self, table, database=None, exclude = None):
-        raise NotImplementedError
+    def has_table(self, table, database=None):
+        with self.cursor() as cursor:
+            if database is not None and database != self.database:
+                cursor.execute('USE {}'.format(database))
+            cursor.execute(f"SHOW TABLES LIKE '{table}'")
+            rv = cursor.fetchall()
+            return bool(rv)
 
     def clone(self):
         return self.__class__(host=self.host, port=self.port, database=self.database,
@@ -166,9 +171,9 @@ class DBAPIConnetor(LoggingMixin):
         # return (
         #     self.name,
         #     self.type_code,
-        #     None,  # TODO: display_length; should this be self.length?
+        #     None,
         #     self.get_column_length(),  # 'internal_size'
-        #     self.get_column_length(),  # 'precision'  # TODO: why!?!?
+        #     self.get_column_length(),  # 'precision'
         #     self.scale,
         #     self.flags % 2 == 0)
         for item in cursor.description:
@@ -180,6 +185,13 @@ class DBAPIConnetor(LoggingMixin):
                 cols.append(name)
         return cols
 
-
+    def quote_identifier(self,v):
+        parts = []
+        for part in v.split('.'):
+            part = trim_prefix(part, '`')
+            part = trim_suffix(part, '`')
+            part = f"'`'{part}'`'"
+            parts.append(part)
+        return '.'.join(parts)
 
 
