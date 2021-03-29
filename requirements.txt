@@ -141,7 +141,7 @@ pydotplus==2.0.2
 pyecharts==0.4.1
 pyecharts-jupyter-installer==0.0.3
 pyflakes==1.5.0
-Pygments==2.2.0
+Pygments==2.7.4
 PyHive==0.5.0
 pylint==1.6.4
 PyMySQL==0.7.11
